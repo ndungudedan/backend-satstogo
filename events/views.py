@@ -103,7 +103,7 @@ class ActivateUser(APIView):
                         responsedict = {'error': 'Oops, you are not eligible to receive this reward'}
                         status = 403
                         is_activated = False
-                    new_attendance = Attendance.objects.update_or_create(
+                    new_attendance = Attendance.objects.create(
                         user=user,
                         event=parent_event,
                         defaults={

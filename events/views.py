@@ -11,6 +11,8 @@ from api.models import SatsUser
 from .serializers import EventSerializer, EventReadSerializer, ConfirmEventSerialiazer, AttendanceSerializer
 import csv
 from django.http import HttpResponse
+from django.utils import timezone
+from datetime import date
 
 ADMIN_API_KEY = settings.ADMIN_API_KEY
 LNURL_ENDPOINT = settings.LNURL_ENDPOINT
@@ -81,7 +83,8 @@ class ActivateUser(APIView):
                 session = EventSession.objects.prefetch_related('parent_event').get(pk=pk)
                 parent_event = session.parent_event
                 try:
-                    alreadyActivated = Attendance.objects.get(user=user,event=parent_event,locked=True)
+                    today = timezone.now().date()
+                    alreadyActivated = Attendance.objects.get(user=user,event=parent_event,locked=True,clock_in_time__date=today)
                     responsedict = {'error': 'You have already activated for this event'}
                     status = 403
                     return Response(data=responsedict,status=status)

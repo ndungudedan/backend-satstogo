@@ -106,7 +106,6 @@ class ActivateUser(APIView):
                     new_attendance = Attendance.objects.create(
                         user=user,
                         event=parent_event,
-                            event= parent_event,
                             eventSession= session,
                             is_activated=is_activated,
                             locked= True,

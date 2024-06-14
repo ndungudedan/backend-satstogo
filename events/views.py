@@ -106,13 +106,11 @@ class ActivateUser(APIView):
                     new_attendance = Attendance.objects.create(
                         user=user,
                         event=parent_event,
-                        defaults={
-                            "event": parent_event,
-                            "eventSession": session,
-                            "is_activated":is_activated,
-                            "locked": True,
-                            "clock_in_time":datetime.today()
-                        }
+                            event= parent_event,
+                            eventSession= session,
+                            is_activated=is_activated,
+                            locked= True,
+                            clock_in_time=datetime.today()
                     )
             except (SatsUser.DoesNotExist, EventSession.DoesNotExist):
                 responsedict = {'error': 'User or Event does not exist'}

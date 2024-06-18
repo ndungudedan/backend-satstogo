@@ -45,7 +45,8 @@ class EventCrud(APIView):
         })
 
     def get(self,request):
-        org = request.data.get('org')
+        org = request.GET.get('org')
+        print(f"${org}---------Org Related Events---------------")
         if not(org):
             events = Event.objects.prefetch_related('eventsession_set')
         else:

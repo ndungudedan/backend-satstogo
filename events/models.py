@@ -20,6 +20,7 @@ class Event(models.Model):
 	TIMEZONE_CHOICES = [(tz, tz) for tz in pytz.all_timezones]
 
 	name = models.TextField()
+	org_username = models.TextField(null=True, blank=True)
 	event_type = models.TextField(max_length=15,choices=EVENT_TYPE_CHOICES)
 	access  = models.TextField(max_length=20,choices=EVENT_ACCESS_CHOICES,default='public')
 	venue = models.TextField()
@@ -48,7 +49,7 @@ class EventSession(models.Model):
 	title = models.TextField()
 	parent_event = models.ForeignKey(Event,on_delete=models.CASCADE)
 	deadline = models.DateTimeField()
-	deadline_string = models.CharField(null=True, blank=True)
+	deadline_string = models.TextField(null=True, blank=True)
 	def __str__(self):
 		return f"ID: {self.pk} - Name: {self.title}"
 	

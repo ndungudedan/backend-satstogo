@@ -45,7 +45,11 @@ class EventCrud(APIView):
         })
 
     def get(self,request):
-        events = Event.objects.prefetch_related('eventsession_set')
+        org = request.data.get('org')
+        if not(org):
+            events = Event.objects.prefetch_related('eventsession_set')
+        else:
+            events = Event.objects.prefetch_related('eventsession_set').filter(org_username=org)
         print('events',events)
         serializer = EventReadSerializer(events, many=True)
         return Response(data=serializer.data,status=status.HTTP_200_OK)

@@ -13,6 +13,7 @@ import csv
 from django.http import HttpResponse
 from django.utils import timezone
 from datetime import date
+import os
 
 ADMIN_API_KEY = settings.ADMIN_API_KEY
 LNURL_ENDPOINT = settings.LNURL_ENDPOINT
@@ -144,23 +145,49 @@ class RegisterUser(APIView):
     serializer_class = AttendanceSerializer
 
     def post(self, request):
-        # Override create to handle attendee data (assuming data format)
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        data=serializer.save()
-        magic_string = data.user.magic_string
-        return Response(
-            data={
-                "message":"User has registered for event successfully!",
-                "data": {
-                    "first_name": data.first_name,
-                    "last_name": data.last_name,
-                    "event": data.event.id,
-                    "magic_string": magic_string,
-                }
-            },
-            status=201
-        )
+            try:
+                first_name = request.data.get('first_name')
+                last_name = request.data.get('last_name')
+                session_id = request.data.get('session')
+                session = EventSession.objects.get(pk=session_id)
+                magic_string = request.data.get('magic_string')
+                if magic_string is None or len(magic_string)==0:
+                    random_data = os.urandom(32)
+                    magic_string = '00' + random_data.hex()[2:64]
+                    user=SatsUser.objects.create(magic_string=magic_string)
+                else:
+                    user = SatsUser.objects.get(magic_string=magic_string)
+
+                existing_match = Attendance.objects.filter(user__magic_string=user.magic_string, eventSession=session).first()
+                if existing_match:
+                    responsedict = {'error': "You have already registered for this event"}
+                    status = 403
+                else:
+                    att = Attendance.objects.create(
+                        first_name=first_name,
+                        last_name=last_name,
+                        user=user,
+                        event=session.parent_event,
+                        eventSession= session,
+                        )
+                    return Response(
+                        data={
+                            "message":"User has registered for event successfully!",
+                            "data": {
+                                "first_name": att.first_name,
+                                "last_name": att.last_name,
+                                "event": att.event.pk,
+                                "magic_string": magic_string,
+                            }
+                        },
+                        status=201
+                    )
+            except Exception as e:
+                print(e)
+                responsedict = {'error': 'Error Processing Request'}
+                status = 500
+
+            return Response(data=responsedict,status=status)       
 
     def get(self,request):
         try:

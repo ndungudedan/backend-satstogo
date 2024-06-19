@@ -114,12 +114,12 @@ class ActivateUser(APIView):
                             user=user,
                             event=parent_event,
                             eventSession=session,
+                            created_at=timezone.now().date(),
                             defaults={
                                 'is_activated': is_activated,
                                 'locked': True,
                                 'clock_in_time': datetime.today()
                             },
-                            filter=Q(user=user, event=parent_event, eventSession=session, clock_in_time__date=timezone.now().date())
                         )
             except (SatsUser.DoesNotExist, EventSession.DoesNotExist):
                 responsedict = {'error': 'User or Event does not exist.'}

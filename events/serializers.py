@@ -3,6 +3,7 @@ import pytz
 from .models import Event, EventSession, Attendance
 from api.models import SatsUser
 from rest_framework import serializers,validators
+import os
 
 class EventSessionReadSerializer(serializers.ModelSerializer):
     class Meta:
@@ -54,13 +55,18 @@ class ConfirmEventSerialiazer(serializers.Serializer):
 
 
 class AttendanceSerializer(serializers.ModelSerializer):
-    user = serializers.CharField()
-
-    # ... other fields
     def is_unique(self,data):
-        magic_string = data.get('user')
+        usr = data.get('user_magic')
+
+        if usr is None:
+            random_data = os.urandom(32)
+            magic_string = '00' + random_data.hex()[2:64]
+            usr=SatsUser.objects.create(magic_string=magic_string)
+
+        print(usr)
+        data['user_magic'] = usr
         event = data.get('event')
-        existing_match = Attendance.objects.filter(user__magic_string=magic_string, event=event).first()
+        existing_match = Attendance.objects.filter(user__magic_string=usr.magic_string, event=event).first()
         
         if existing_match:            
             raise serializers.ValidationError({
@@ -73,19 +79,11 @@ class AttendanceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Attendance
-        fields = ['first_name','last_name','user','event']
-        validators = [
-            validators.UniqueTogetherValidator(
-                queryset=Attendance.objects.all(),
-                fields=["user", "event"],
-                message=('This user has already registered for this')
-            )
-        ]
+        fields = ['first_name','last_name','user','event','user_magic']
 
     def create(self, validated_data):
-        user = validated_data.pop('user')
+        user = validated_data.pop('user_magic')
         new_user = SatsUser.objects.get(magic_string=user)
-        print('new user',validated_data)
         new_attendance = Attendance.objects.create(user=new_user, **validated_data)
         return new_attendance
 

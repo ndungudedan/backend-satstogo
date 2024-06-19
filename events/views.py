@@ -46,7 +46,7 @@ class EventCrud(APIView):
 
     def get(self,request):
         org = request.GET.get('org')
-        print(f"${org}---------Org Related Events---------------")
+        print(f"/{org}---------Org Related Events---------------")
         if not(org):
             events = Event.objects.prefetch_related('eventsession_set')
         else:
@@ -147,12 +147,17 @@ class RegisterUser(APIView):
         # Override create to handle attendee data (assuming data format)
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
-
+        data=serializer.save()
+        magic_string = data.user.magic_string
         return Response(
             data={
                 "message":"User has registered for event successfully!",
-                "data": serializer.data
+                "data": {
+                    "first_name": data.first_name,
+                    "last_name": data.last_name,
+                    "event": data.event.id,
+                    "magic_string": magic_string,
+                }
             },
             status=201
         )

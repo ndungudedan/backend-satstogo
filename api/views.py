@@ -6,7 +6,6 @@ from api.serializers import SatsUserSerializer
 from api.utils.Utils import Utils
 from secp256k1 import PublicKey
 from .models import FcmToken, SatsUser,SatsUser
-import os
 import random
 import string
 import lnurl

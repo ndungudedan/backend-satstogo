@@ -96,6 +96,7 @@ class ActivateUser(APIView):
                     status = 403
                     return Response(data=responsedict,status=status)
                 except Attendance.DoesNotExist:
+                    print(f"Serveer Time:${datetime.today()} || Timezone time: ${timezone.now().date()}")
                     print(f"datetime.now(): {datetime.now().time()}")
                     formatted_datetime = datetime.now().time()
                     print(f"formatted_datetime: {formatted_datetime}")
@@ -149,6 +150,7 @@ class RegisterUser(APIView):
     serializer_class = AttendanceSerializer
 
     def post(self, request):
+            print(f"Serveer Time:${datetime.today()} || Timezone time: ${timezone.now().date()}")
             try:
                 first_name = request.data.get('first_name')
                 last_name = request.data.get('last_name')
@@ -163,28 +165,31 @@ class RegisterUser(APIView):
                 else:
                     user = SatsUser.objects.get(magic_string=magic_string)
 
-                existing_match = Attendance.objects.filter(user__magic_string=user.magic_string, eventSession=session).first()
+                existing_match = Attendance.objects.filter(user__magic_string=user.magic_string, eventSession=session,created_at=timezone.now().date(),locked=True).first()
                 if existing_match:
                     responsedict = {'error': "You have already registered for this event"}
                     status = 403
                 else:
-                    att = Attendance.objects.create(
-                        first_name=first_name,
-                        last_name=last_name,
-                        user=user,
-                        event=session.parent_event,
-                        eventSession= session,
-                        phone_number=phone_number,
+                    att, created = Attendance.objects.update_or_create(
+                            user=user,
+                            event=session.parent_event,
+                            eventSession= session,
+                            created_at=timezone.now().date(),
+                            defaults={
+                                'phone_number': phone_number,
+                                'first_name': first_name,
+                                'last_name': last_name,
+                            },
                         )
                     return Response(
                         data={
                             "message":"User has registered for event successfully!",
                             "data": {
-                                "first_name": att.first_name,
-                                "last_name": att.last_name,
-                                "event": att.event.pk,
+                                "first_name": first_name,
+                                "last_name": last_name,
+                                "event": session.parent_event.pk,
                                 "magic_string": magic_string,
-                                "phone_number": att.phone_number,
+                                "phone_number": phone_number,
                             }
                         },
                         status=201

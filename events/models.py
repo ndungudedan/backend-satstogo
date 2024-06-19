@@ -77,7 +77,7 @@ class Attendance(models.Model):
 	is_activated = models.BooleanField(default=False)
 	locked = models.BooleanField(default=False)
 	clock_in_time = models.DateTimeField(auto_now_add=True)
-	created_at = models.DateTimeField(default=now)
+	created_at = models.DateTimeField(auto_now_add=True)
 
 	def get_by_magic_string(self, magic_string):
 		return self.objects.filter(user__magic_string=magic_string).first()  # Get single object

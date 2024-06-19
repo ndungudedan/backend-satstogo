@@ -14,6 +14,7 @@ from django.http import HttpResponse
 from django.utils import timezone
 from datetime import date
 import os
+from django.db.models import Q
 
 ADMIN_API_KEY = settings.ADMIN_API_KEY
 LNURL_ENDPOINT = settings.LNURL_ENDPOINT

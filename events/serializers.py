@@ -57,7 +57,7 @@ class ConfirmEventSerialiazer(serializers.Serializer):
 class AttendanceSerializer(serializers.ModelSerializer):
     def is_unique(self,data):
         try:
-            usr = data.get('user_magic')
+            usr = data.get('user')
 
             if usr is None:
                 random_data = os.urandom(32)
@@ -65,7 +65,7 @@ class AttendanceSerializer(serializers.ModelSerializer):
                 usr=SatsUser.objects.create(magic_string=magic_string)
 
             print(usr)
-            data['user_magic'] = usr
+            data['user'] = usr
             event = data.get('event')
             existing_match = Attendance.objects.filter(user__magic_string=usr.magic_string, event=event).first()
             
@@ -82,10 +82,10 @@ class AttendanceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Attendance
-        fields = ['first_name','last_name','user','event','user_magic']
+        fields = ['first_name','last_name','user','event']
 
     def create(self, validated_data):
-        user = validated_data.pop('user_magic')
+        user = validated_data.pop('user')
         new_user = SatsUser.objects.get(magic_string=user)
         new_attendance = Attendance.objects.create(user=new_user, **validated_data)
         return new_attendance

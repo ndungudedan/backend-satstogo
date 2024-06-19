@@ -109,16 +109,19 @@ class ActivateUser(APIView):
                         responsedict = {'error': 'Oops, you are not eligible to receive this reward'}
                         status = 403
                         is_activated = False
-                    new_attendance = Attendance.objects.create(
-                        user=user,
-                        event=parent_event,
-                            eventSession= session,
-                            is_activated=is_activated,
-                            locked= True,
-                            clock_in_time=datetime.today()
-                    )
+                    new_attendance, created = Attendance.objects.update_or_create(
+                            user=user,
+                            event=parent_event,
+                            eventSession=session,
+                            defaults={
+                                'is_activated': is_activated,
+                                'locked': True,
+                                'clock_in_time': datetime.today()
+                            },
+                            filter=Q(user=user, event=parent_event, eventSession=session, clock_in_time__date=timezone.now().date())
+                        )
             except (SatsUser.DoesNotExist, EventSession.DoesNotExist):
-                responsedict = {'error': 'User or Event does not exist'}
+                responsedict = {'error': 'User or Event does not exist.'}
                 status = 404
         else:
             responsedict = serialize_data.errors
@@ -148,6 +151,7 @@ class RegisterUser(APIView):
             try:
                 first_name = request.data.get('first_name')
                 last_name = request.data.get('last_name')
+                phone_number = request.data.get('phone_number')
                 session_id = request.data.get('session')
                 session = EventSession.objects.get(pk=session_id)
                 magic_string = request.data.get('magic_string')
@@ -169,6 +173,7 @@ class RegisterUser(APIView):
                         user=user,
                         event=session.parent_event,
                         eventSession= session,
+                        phone_number=phone_number,
                         )
                     return Response(
                         data={
@@ -178,6 +183,7 @@ class RegisterUser(APIView):
                                 "last_name": att.last_name,
                                 "event": att.event.pk,
                                 "magic_string": magic_string,
+                                "phone_number": att.phone_number,
                             }
                         },
                         status=201

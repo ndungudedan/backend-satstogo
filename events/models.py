@@ -71,7 +71,7 @@ class Attendance(models.Model):
 	last_name = models.TextField(default="")
 	employee_id = models.TextField(default="")
 	user = models.ForeignKey(SatsUser, null=True, on_delete=models.CASCADE)
-	user_magic = models.ForeignKey(SatsUser, null=True, on_delete=models.CASCADE,to_field='magic_string',related_name='attendances_by_magic')
+	phone_number = models.TextField(null=True)
 	event = models.ForeignKey(Event,null=True, on_delete=models.CASCADE)
 	eventSession = models.ForeignKey(EventSession, null=True, on_delete= models.CASCADE)
 	is_activated = models.BooleanField(default=False)

@@ -56,22 +56,25 @@ class ConfirmEventSerialiazer(serializers.Serializer):
 
 class AttendanceSerializer(serializers.ModelSerializer):
     def is_unique(self,data):
-        usr = data.get('user_magic')
+        try:
+            usr = data.get('user_magic')
 
-        if usr is None:
-            random_data = os.urandom(32)
-            magic_string = '00' + random_data.hex()[2:64]
-            usr=SatsUser.objects.create(magic_string=magic_string)
+            if usr is None:
+                random_data = os.urandom(32)
+                magic_string = '00' + random_data.hex()[2:64]
+                usr=SatsUser.objects.create(magic_string=magic_string)
 
-        print(usr)
-        data['user_magic'] = usr
-        event = data.get('event')
-        existing_match = Attendance.objects.filter(user__magic_string=usr.magic_string, event=event).first()
-        
-        if existing_match:            
-            raise serializers.ValidationError({
-                'error': f"You have already registered for this event"
-            })
+            print(usr)
+            data['user_magic'] = usr
+            event = data.get('event')
+            existing_match = Attendance.objects.filter(user__magic_string=usr.magic_string, event=event).first()
+            
+            if existing_match:            
+                raise serializers.ValidationError({
+                    'error': f"You have already registered for this event"
+                })
+        except Exception as e:
+            print(e)
 
     def validate(self, data):
         self.is_unique(data)

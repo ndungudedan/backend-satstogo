@@ -138,11 +138,11 @@ class ActivateUser(APIView):
         response['Content-Disposition'] = 'attachment; filename="attendances.csv"'
 
         writer = csv.writer(response)
-        writer.writerow(['user', 'sats_balance', "event", "reward", "is_activated", "clock_in_time"])
+        writer.writerow(['user', 'phone_number', 'sats_balance', "event", "reward", "is_activated", "clock_in_time","created_at"])
 
         for att in checkins:
             print(f"att: ${att}")
-            writer.writerow([f"${att.user.first_name} ${att.user.last_name}",att.user.sats_balance, att.event.name,att.event.reward, att.is_activated, att.clock_in_time])
+            writer.writerow([f"${att.first_name or att.user.first_name} ${att.last_name or att.user.last_name}",att.phone_number, att.user.sats_balance, att.event.name,att.event.reward, att.is_activated, att.clock_in_time,att.created_at])
 
         return response
 
@@ -150,7 +150,7 @@ class RegisterUser(APIView):
     serializer_class = AttendanceSerializer
 
     def post(self, request):
-            print(f"Serveer Time:${datetime.today()} || Timezone time: ${timezone.now().date()}")
+            print(f"Server Time:${datetime.today()} || Timezone time: ${timezone.now().date()}")
             try:
                 first_name = request.data.get('first_name')
                 last_name = request.data.get('last_name')

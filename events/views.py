@@ -89,8 +89,8 @@ class ActivateUser(APIView):
                 user = SatsUser.objects.get(magic_string=magic_string)
                 session = EventSession.objects.prefetch_related('parent_event').get(pk=pk)
                 parent_event = session.parent_event
+                today = timezone.now().date()
                 try:
-                    today = timezone.now().date()
                     alreadyActivated = Attendance.objects.get(user=user,event=parent_event,locked=True,clock_in_time__date=today)
                     responsedict = {'error': 'You have already activated for this event'}
                     status = 403
@@ -111,16 +111,29 @@ class ActivateUser(APIView):
                         responsedict = {'error': 'Oops, you are not eligible to receive this reward'}
                         status = 403
                         is_activated = False
-                    new_attendance, created = Attendance.objects.update_or_create(
+
+                    existing_record = Attendance.objects.filter(
+                        user=user,
+                        event=parent_event,
+                        eventSession=session,
+                        created_at__date=today
+                    ).first()
+
+                    if existing_record:
+                        existing_record.is_activated = is_activated
+                        existing_record.locked = True
+                        existing_record.save()
+                        new_attendance = existing_record
+                    else:
+                        new_attendance, created = Attendance.objects.update_or_create(
                             user=user,
                             event=parent_event,
                             eventSession=session,
-                            created_at=timezone.now().date(),
                             defaults={
                                 'is_activated': is_activated,
                                 'locked': True,
                                 'clock_in_time': datetime.today()
-                            },
+                            }
                         )
             except (SatsUser.DoesNotExist, EventSession.DoesNotExist):
                 responsedict = {'error': 'User or Event does not exist.'}
@@ -158,6 +171,7 @@ class RegisterUser(APIView):
                 session_id = request.data.get('session')
                 session = EventSession.objects.get(pk=session_id)
                 magic_string = request.data.get('magic_string')
+                today = timezone.now().date()
                 if magic_string is None or len(magic_string)==0:
                     random_data = os.urandom(32)
                     magic_string = '00' + random_data.hex()[2:64]
@@ -165,8 +179,13 @@ class RegisterUser(APIView):
                 else:
                     user = SatsUser.objects.get(magic_string=magic_string)
 
-                existing_match = Attendance.objects.filter(user__magic_string=user.magic_string, eventSession=session,created_at=timezone.now().date(),locked=True).first()
-                if existing_match:
+                existing_match = Attendance.objects.filter(
+                    user__magic_string=user.magic_string, 
+                    eventSession=session,
+                    created_at__date=today
+                ).first()        
+
+                if existing_match and existing_match.locked:
                     responsedict = {'error': "You have already registered for this event"}
                     status = 403
                 else:
@@ -174,13 +193,14 @@ class RegisterUser(APIView):
                             user=user,
                             event=session.parent_event,
                             eventSession= session,
-                            created_at=timezone.now().date(),
+                            created_at=today,
                             defaults={
                                 'phone_number': phone_number,
                                 'first_name': first_name,
                                 'last_name': last_name,
                             },
                         )
+                    
                     return Response(
                         data={
                             "message":"User has registered for event successfully!",

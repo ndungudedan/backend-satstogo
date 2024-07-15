@@ -158,7 +158,6 @@ class ActivateUser(APIView):
 
         for att in checkins:
             print(f"att: ${att}")
-            tw=WithdrawalRequest.objects.get(user=att.user).aggregate(Sum('amount_withdrawn'))
             user_withdrawals = WithdrawalRequest.objects.filter(user=att.user)
             tw = user_withdrawals.aggregate(total=Sum('amount_withdrawn'))
             writer.writerow([f"${att.first_name or att.user.first_name} ${att.last_name or att.user.last_name}",att.phone_number, att.event.name,att.event.reward, att.is_activated, att.clock_in_time,att.created_at,att.user.sats_balance,tw['total']])

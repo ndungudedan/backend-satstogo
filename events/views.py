@@ -6,6 +6,8 @@ from rest_framework.parsers import JSONParser
 from rest_framework.views import APIView
 from rest_framework import status
 from datetime import datetime
+
+from wallet.models import WithdrawalRequest
 from .models import Event, Attendance,EventSession
 from api.models import SatsUser
 from .serializers import EventSerializer, EventReadSerializer, ConfirmEventSerialiazer, AttendanceSerializer
@@ -14,6 +16,7 @@ from django.http import HttpResponse
 from django.utils import timezone
 from datetime import date
 import os
+from django.db.models import Sum
 from django.db.models import Q
 
 ADMIN_API_KEY = settings.ADMIN_API_KEY
@@ -151,11 +154,20 @@ class ActivateUser(APIView):
         response['Content-Disposition'] = 'attachment; filename="attendances.csv"'
 
         writer = csv.writer(response)
-        writer.writerow(['user', 'phone_number', 'sats_balance', "event", "reward", "is_activated", "clock_in_time","created_at"])
+        writer.writerow(['user', 'phone_number', "event", "event_reward", "is_activated", "clock_in_time","created_at",'sats_balance',"total_sats_withdrawn"])
 
         for att in checkins:
             print(f"att: ${att}")
-            writer.writerow([f"${att.first_name or att.user.first_name} ${att.last_name or att.user.last_name}",att.phone_number, att.user.sats_balance, att.event.name,att.event.reward, att.is_activated, att.clock_in_time,att.created_at])
+            tw=WithdrawalRequest.objects.get(user=att.user).aggregate(Sum('amount_withdrawn'))
+            writer.writerow([f"${att.first_name or att.user.first_name} ${att.last_name or att.user.last_name}",att.phone_number, att.event.name,att.event.reward, att.is_activated, att.clock_in_time,att.created_at,att.user.sats_balance,tw])
+
+        wrqs = WithdrawalRequest.objects.all().select_related('user').order_by('-created_at')
+        writer.writerow(["-------------WITHDRAWAL TRANSACTIONS-------------"])
+        writer.writerow(['user', "min_withdrawable", "max_withdrawable", "amount_withdrawn", "status","created_at"])
+        for w in wrqs:
+            print(f"att: ${w}")
+            tw=WithdrawalRequest.objects.get(user=att.user).aggregate(Sum('amount_withdrawn'))
+            writer.writerow([f"${w.user.first_name} ${w.user.last_name}",w.min_withdrawable, w.max_withdrawable,w.amount_withdrawn, w.status, w.created_at])
 
         return response
 

@@ -167,7 +167,6 @@ class ActivateUser(APIView):
         writer.writerow(['user', "min_withdrawable", "max_withdrawable", "amount_withdrawn", "status","created_at"])
         for w in wrqs:
             print(f"att: ${w}")
-            tw=WithdrawalRequest.objects.get(user=att.user).aggregate(Sum('amount_withdrawn'))
             writer.writerow([f"${w.user.first_name} ${w.user.last_name}",w.min_withdrawable, w.max_withdrawable,w.amount_withdrawn, w.status, w.created_at])
 
         return response
